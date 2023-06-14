@@ -5,25 +5,27 @@ import CharacterId from '@/characters/pages/CharacterId.vue';
 import CharacterList from '../pages/CharacterList.vue';
 import CharacterSearch from '../pages/CharacterSearch.vue';
 
+const routeName = 'characters';
+
 export const characterRoute: RouteRecordRaw = {
-  path: '/characters',
-  redirect: '/characters/list',
+  path: `/${routeName}`,
+  redirect: `/${routeName}/list`,
   component: CharacterLayout,
   children: [
     {
-      path: 'by/id',
+      path: 'by/:id',
       name: 'character-id',
       props: { title: 'Character by id', visible: false },
       component: CharacterId
     },
     {
-      path: 'list',
+      path: `/${routeName}/list`,
       name: 'character-list',
       props: { title: 'List of the wabalubadubdubverse', visible: true },
       component: CharacterList
     },
     {
-      path: 'search',
+      path: `/${routeName}/search`,
       name: 'character-search',
       props: { title: 'Search page', visible: true },
       component: CharacterSearch
