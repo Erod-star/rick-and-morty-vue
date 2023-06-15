@@ -14,7 +14,7 @@ import type { CharactersRequest, Character } from '@/characters/interfaces/chara
 import { useCharacters } from '@/characters/composables/useCharacters';
 
 import CardList from '../components/CardList.vue';
-import charactersStore from '../../store/characters.store';
+import charactersStore from '@/store/characters.store';
 
 const props = defineProps<Props>();
 
@@ -47,7 +47,10 @@ useQuery(['characters'], getCharactersChaceFirst, {
 </script>
 
 <template>
-  <section v-if="charactersStore.characters.isLoading"><h2>Loading...</h2></section>
+  <section v-if="charactersStore.characters.isLoading">
+    <h2>Loading...</h2>
+    <img src="https://media.tenor.com/fjdydcAjFo8AAAAj/capoo-blue.gif" alt="loader" />
+  </section>
 
   <section v-else-if="charactersStore.characters.hasError">
     <h2>{{ charactersStore.characters.errorMessage }}</h2>
