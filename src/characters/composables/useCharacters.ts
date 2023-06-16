@@ -1,43 +1,53 @@
-import { onMounted, ref } from 'vue';
-import axios from 'axios';
-
+import { computed, ref } from 'vue';
 import rickAndMortyApi from '@/api/rickAndMorty';
-import type { Character, CharactersRequest } from '../interfaces/character';
+
+import type { CharactersRequest, Character } from '@/characters/interfaces/character';
+import { useQuery } from '@tanstack/vue-query';
 
 const characters = ref<Character[]>([]);
-const isLoading = ref<boolean>(false);
+const errorMessage = ref<string | null>(null);
 const hasError = ref<boolean>(false);
-const errorMessage = ref<string>();
 
-export const useCharacters = () => {
-  const loadCharacters = async () => {
-    if (characters.value.length > 0) return;
-    isLoading.value = true;
-    try {
-      const { data } = await rickAndMortyApi.get<CharactersRequest>('/character');
-      characters.value = data.results;
-    } catch (error) {
-      hasError.value = true;
+const getCharacters = async (): Promise<Character[]> => {
+  if (characters.value.length > 0) return characters.value;
 
-      if (axios.isAxiosError(error)) {
-        return (errorMessage.value = error.message);
-      }
-      errorMessage.value = JSON.stringify(error);
+  const { data } = await rickAndMortyApi.get<CharactersRequest>('/character');
+  return data.results;
+};
+
+const loadedCharacters = (data: Character[]) => {
+  hasError.value = false;
+  errorMessage.value = null;
+  characters.value = data;
+};
+
+const loadCharactersFailed = (error: string) => {
+  characters.value = [];
+  errorMessage.value = error;
+  hasError.value = true;
+};
+
+// ? ========= Composable ==================
+const useCharacters = () => {
+  const { isLoading } = useQuery(['characters'], getCharacters, {
+    onSuccess: loadedCharacters,
+    onError(error) {
+      loadCharactersFailed(`${error}`);
     }
-    isLoading.value = false;
-  };
-
-  // ? Lyfecicle hooks
-  onMounted(async () => {
-    await loadCharacters();
   });
 
   return {
+    // ? Properties
     characters,
-    isLoading,
+    errorMessage,
     hasError,
-    errorMessage
+    isLoading,
+
+    // ? Getters
+    count: computed(() => characters.value.length)
+
+    // ? Methods
   };
 };
 
-// export default useCaracters
+export default useCharacters;

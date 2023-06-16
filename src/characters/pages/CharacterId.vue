@@ -6,42 +6,34 @@ interface CharacterIdProps {
 </script>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
-import type { Character, CharactersRequest } from '@/characters/interfaces/character';
-import rickAndMortyApi from '@/api/rickAndMorty';
-import charactersStore from '@/store/characters.store';
-import { useQuery } from '@tanstack/vue-query';
-import { ref } from 'vue';
+import { watchEffect } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import useCharacter from '@/characters/composables/useCharacter';
 
 const props = defineProps<CharacterIdProps>();
 const route = useRoute();
+const router = useRouter();
+
 const { id } = route.params as { id: string };
-const episodes = ref<string[]>();
+const { character, hasError, errorMessage, formattedEpisodes, isLoading } = useCharacter(id);
 
-const getCharacterInfo = async (characterId: string): Promise<Character> => {
-  if (charactersStore.checkIdInStore(characterId)) {
-    return charactersStore.ids.list[characterId];
-  }
-  const { data } = await rickAndMortyApi.get<Character>(`/character/${characterId}`);
-  return data;
-};
-
-const { data: character } = useQuery([`characters/${id}`], () => getCharacterInfo(id), {
-  onSuccess(character: Character) {
-    charactersStore.loadedCharacter(character);
-    episodes.value = character.episode;
-    episodes.value = character.episode.map((path) => path.split('/')[5]);
+watchEffect(() => {
+  if (!isLoading.value && hasError.value) {
+    router.replace('/characters');
   }
 });
 </script>
 
 <template>
-  <section v-if="!character" class="loading-container">
+  <section v-if="isLoading" class="loading-container">
     <h1>Loading</h1>
     <img src="https://media.tenor.com/fjdydcAjFo8AAAAj/capoo-blue.gif" alt="loader" />
   </section>
+  <section v-else-if="hasError">
+    <h1>{{ errorMessage }}</h1>
+  </section>
 
-  <div v-else class="character-container">
+  <div v-else-if="character" class="character-container">
     <h1>{{ character.name }}</h1>
     <div class="character-container__detail">
       <img :src="character.image" :alt="character.name" />
@@ -51,7 +43,9 @@ const { data: character } = useQuery([`characters/${id}`], () => getCharacterInf
         <li><span>Origin: </span>{{ character.origin.name }}</li>
         <li><span>Species: </span>{{ character.species }}</li>
         <li><span>Status: </span>{{ character.status }}</li>
-        <li v-if="episodes"><span>Episodes apperances:</span> {{ episodes?.join(', ') }}</li>
+        <li v-if="formattedEpisodes">
+          <span>Episodes apperances:</span> {{ formattedEpisodes?.join(', ') }}
+        </li>
         <li><span>Date of creation:</span> {{ character.created }}</li>
         <li v-if="character.type"><span>Type: </span>{{ character.type }}</li>
       </ul>
